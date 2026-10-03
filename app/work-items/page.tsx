@@ -52,7 +52,7 @@ function WorkItemsList() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Work Items</h1>
-          <p className="text-slate-500 mt-1">Manage operational work, issues, and incidents.</p>
+          <p className="text-slate-400 mt-1">Manage operational work, issues, and incidents.</p>
         </div>
         <Link href="/work-items/new" className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition shadow-sm">
           <Plus size={18} />
@@ -60,13 +60,13 @@ function WorkItemsList() {
         </Link>
       </div>
 
-      <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap gap-4 items-center">
+      <div className="bg-slate-900 p-4 rounded-xl shadow-sm border border-slate-800 flex flex-wrap gap-4 items-center">
         <div className="flex-1 min-w-[200px] relative">
           <Search className="absolute left-3 top-2.5 text-slate-400" size={18} />
           <input
             type="text"
             placeholder="Search items..."
-            className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full pl-10 pr-4 py-2 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-950 text-white"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
           />
@@ -75,7 +75,7 @@ function WorkItemsList() {
         <select 
           value={status} 
           onChange={(e) => updateFilter('status', e.target.value)}
-          className="border border-slate-300 rounded-lg px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border border-slate-700 rounded-lg px-4 py-2 bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">All Statuses</option>
           <option value="open">Open</option>
@@ -89,7 +89,7 @@ function WorkItemsList() {
         <select 
           value={priority} 
           onChange={(e) => updateFilter('priority', e.target.value)}
-          className="border border-slate-300 rounded-lg px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border border-slate-700 rounded-lg px-4 py-2 bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">All Priorities</option>
           <option value="low">Low</option>
@@ -101,7 +101,7 @@ function WorkItemsList() {
         <select 
           value={type} 
           onChange={(e) => updateFilter('type', e.target.value)}
-          className="border border-slate-300 rounded-lg px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border border-slate-700 rounded-lg px-4 py-2 bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">All Types</option>
           <option value="customer_issue">Customer Issue</option>
@@ -111,9 +111,9 @@ function WorkItemsList() {
         </select>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="bg-slate-900 rounded-xl shadow-sm border border-slate-800 overflow-hidden">
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-medium">
+          <thead className="bg-slate-950 border-b border-slate-800 text-slate-400 font-medium">
             <tr>
               <th className="px-6 py-4">Title</th>
               <th className="px-6 py-4">Status</th>
@@ -125,7 +125,7 @@ function WorkItemsList() {
           <tbody className="divide-y divide-slate-100">
             {isLoading ? (
               <tr>
-                <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
+                <td colSpan={5} className="px-6 py-12 text-center text-slate-400">
                   <div className="animate-pulse space-y-4">
                     <div className="h-4 bg-slate-200 rounded w-1/4 mx-auto"></div>
                     <div className="h-4 bg-slate-200 rounded w-1/3 mx-auto"></div>
@@ -140,31 +140,31 @@ function WorkItemsList() {
               </tr>
             ) : data?.items?.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
+                <td colSpan={5} className="px-6 py-12 text-center text-slate-400">
                   No work items match your criteria.
                 </td>
               </tr>
             ) : (
               data?.items.map((item: any) => (
-                <tr key={item.id} className="hover:bg-slate-50 transition cursor-pointer" onClick={() => router.push(`/work-items/${item.id}`)}>
-                  <td className="px-6 py-4 font-medium text-slate-900">{item.title}</td>
+                <tr key={item.id} className="hover:bg-slate-800/50 transition cursor-pointer" onClick={() => router.push(`/work-items/${item.id}`)}>
+                  <td className="px-6 py-4 font-medium text-white">{item.title}</td>
                   <td className="px-6 py-4">
-                    <span className="px-2.5 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-medium uppercase tracking-wide">
+                    <span className="px-2.5 py-1 bg-slate-800 text-slate-300 rounded-full text-xs font-medium uppercase tracking-wide">
                       {item.status.replace('_', ' ')}
                     </span>
                   </td>
                   <td className="px-6 py-4">
                     <span className={`px-2.5 py-1 rounded-full text-xs font-medium uppercase tracking-wide ${
-                      item.priority === 'critical' ? 'bg-red-100 text-red-700' :
+                      item.priority === 'critical' ? 'bg-red-100 text-red-400' :
                       item.priority === 'high' ? 'bg-orange-100 text-orange-700' :
-                      item.priority === 'medium' ? 'bg-amber-100 text-amber-700' :
-                      'bg-green-100 text-green-700'
+                      item.priority === 'medium' ? 'bg-amber-100 text-amber-400' :
+                      'bg-green-100 text-green-400'
                     }`}>
                       {item.priority}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-slate-500 capitalize">{item.type.replace('_', ' ')}</td>
-                  <td className="px-6 py-4 text-slate-500">
+                  <td className="px-6 py-4 text-slate-400 capitalize">{item.type.replace('_', ' ')}</td>
+                  <td className="px-6 py-4 text-slate-400">
                     {new Date(item.updatedAt).toLocaleDateString()}
                   </td>
                 </tr>
@@ -174,10 +174,10 @@ function WorkItemsList() {
         </table>
         
         {data?.nextCursor && (
-          <div className="px-6 py-4 border-t border-slate-200 flex justify-end">
+          <div className="px-6 py-4 border-t border-slate-800 flex justify-end">
             <button 
               onClick={() => updateFilter('cursor', data.nextCursor)}
-              className="flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-800"
+              className="flex items-center gap-1 text-sm font-medium text-blue-500 hover:text-blue-800"
             >
               Next Page <ChevronRight size={16} />
             </button>

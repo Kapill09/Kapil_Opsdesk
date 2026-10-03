@@ -16,10 +16,16 @@ export type CurrentUser = {
 // Mock development identity abstraction
 // In a real app, this would use NextAuth, Clerk, Auth0, etc.
 export const getCurrentUser = async (): Promise<CurrentUser | null> => {
-  // Deterministically fetch the first user as our development user
-  const firstUser = await db.query.users.findFirst({
-    orderBy: (users, { asc }) => [asc(users.id)],
+  // Deterministically fetch a specific seeded user as our development user
+  let firstUser = await db.query.users.findFirst({
+    where: eq(users.email, 'user1@opsdesk.local'),
   });
+
+  if (!firstUser) {
+    firstUser = await db.query.users.findFirst({
+      orderBy: (users, { asc }) => [asc(users.createdAt)],
+    });
+  }
   
   if (!firstUser) return null;
 

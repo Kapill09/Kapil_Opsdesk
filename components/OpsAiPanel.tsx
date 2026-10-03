@@ -69,12 +69,12 @@ export default function OpsAiPanel({ workItemId }: { workItemId: string }) {
   }
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+    <div className="bg-slate-900 rounded-xl border border-slate-800 shadow-sm overflow-hidden">
       {/* Header */}
-      <div className="p-4 border-b border-slate-200 bg-gradient-to-r from-violet-50 to-indigo-50 flex items-center gap-2">
+      <div className="p-4 border-b border-slate-800 bg-gradient-to-r from-violet-50 to-indigo-50 flex items-center gap-2">
         <Sparkles size={18} className="text-violet-600" />
-        <h3 className="font-semibold text-slate-800">Ops AI</h3>
-        <span className="text-xs text-slate-500 ml-auto">Read-only assistant</span>
+        <h3 className="font-semibold text-slate-200">Ops AI</h3>
+        <span className="text-xs text-slate-400 ml-auto">Read-only assistant</span>
       </div>
 
       {/* Example prompts */}
@@ -101,7 +101,7 @@ export default function OpsAiPanel({ workItemId }: { workItemId: string }) {
             placeholder="Ask about this work item…"
             disabled={isLoading}
             maxLength={1000}
-            className="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 disabled:opacity-50"
+            className="flex-1 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 disabled:opacity-50"
           />
           <button
             type="submit"
@@ -121,7 +121,7 @@ export default function OpsAiPanel({ workItemId }: { workItemId: string }) {
       {/* Loading state */}
       {isLoading && (
         <div className="px-4 pb-4">
-          <div className="flex items-center gap-3 text-sm text-slate-500 bg-slate-50 p-4 rounded-lg">
+          <div className="flex items-center gap-3 text-sm text-slate-400 bg-slate-950 p-4 rounded-lg">
             <Loader2 size={16} className="animate-spin text-violet-600" />
             <span>Analyzing work item context…</span>
           </div>
@@ -131,7 +131,7 @@ export default function OpsAiPanel({ workItemId }: { workItemId: string }) {
       {/* Error state */}
       {error && (
         <div className="px-4 pb-4">
-          <div className="flex items-start gap-3 text-sm bg-amber-50 p-4 rounded-lg border border-amber-200">
+          <div className="flex items-start gap-3 text-sm bg-amber-950/30 p-4 rounded-lg border border-amber-900/50">
             <AlertTriangle size={16} className="text-amber-600 shrink-0 mt-0.5" />
             <p className="text-amber-800">{error}</p>
           </div>
@@ -141,8 +141,8 @@ export default function OpsAiPanel({ workItemId }: { workItemId: string }) {
       {/* Answer */}
       {result && (
         <div className="px-4 pb-4 space-y-3">
-          <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
-            <p className="text-sm text-slate-800 whitespace-pre-wrap leading-relaxed">
+          <div className="bg-slate-950 p-4 rounded-lg border border-slate-100">
+            <p className="text-sm text-slate-200 whitespace-pre-wrap leading-relaxed">
               {result.answer}
             </p>
           </div>
@@ -151,8 +151,8 @@ export default function OpsAiPanel({ workItemId }: { workItemId: string }) {
           {result.sources.length > 0 && (
             <div>
               <div className="flex items-center gap-1.5 mb-2">
-                <BookOpen size={14} className="text-slate-500" />
-                <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Sources</span>
+                <BookOpen size={14} className="text-slate-400" />
+                <span className="text-xs font-medium text-slate-400 uppercase tracking-wide">Sources</span>
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {result.sources.map((source) => (
@@ -160,9 +160,9 @@ export default function OpsAiPanel({ workItemId }: { workItemId: string }) {
                     key={source.id}
                     className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md font-mono ${
                       source.type === 'work_item'
-                        ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                        ? 'bg-blue-950/30 text-blue-400 border border-blue-900/50'
                         : source.type === 'comment'
-                        ? 'bg-green-50 text-green-700 border border-green-200'
+                        ? 'bg-green-950/30 text-green-400 border border-green-900/50'
                         : 'bg-orange-50 text-orange-700 border border-orange-200'
                     }`}
                     title={source.summary}

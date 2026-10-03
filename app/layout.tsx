@@ -28,7 +28,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="h-full flex bg-slate-50 text-slate-900 overflow-hidden">
+      <body className="h-full flex bg-slate-950 text-white overflow-hidden">
         <Providers>
           <Sidebar user={user} />
           <main className="flex-1 overflow-y-auto">

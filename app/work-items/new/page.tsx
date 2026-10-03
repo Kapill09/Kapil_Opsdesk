@@ -68,35 +68,35 @@ export default function NewWorkItemPage() {
 
   return (
     <div className="p-8 max-w-2xl mx-auto animate-in fade-in duration-300">
-      <Link href="/work-items" className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900 mb-6 font-medium">
+      <Link href="/work-items" className="flex items-center gap-2 text-sm text-slate-400 hover:text-slate-900 mb-6 font-medium">
         <ArrowLeft size={16} /> Back to Work Items
       </Link>
 
-      <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200">
+      <div className="bg-slate-900 p-8 rounded-xl shadow-sm border border-slate-800">
         <h1 className="text-2xl font-bold mb-6">Create Work Item</h1>
         
         {error && (
-          <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-lg border border-red-200">
+          <div className="mb-6 p-4 bg-red-950/30 text-red-400 rounded-lg border border-red-900/50">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Title *</label>
+            <label className="block text-sm font-medium text-slate-300 mb-1">Title *</label>
             <input 
               type="text" 
-              className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full border border-slate-700 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-950 text-white"
               value={formData.title}
               onChange={e => setFormData({ ...formData, title: e.target.value })}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Description *</label>
+            <label className="block text-sm font-medium text-slate-300 mb-1">Description *</label>
             <textarea 
               rows={4}
-              className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full border border-slate-700 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-950 text-white"
               value={formData.description}
               onChange={e => setFormData({ ...formData, description: e.target.value })}
             />
@@ -104,9 +104,9 @@ export default function NewWorkItemPage() {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Type</label>
+              <label className="block text-sm font-medium text-slate-300 mb-1">Type</label>
               <select 
-                className="w-full border border-slate-300 rounded-lg p-2.5 bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full border border-slate-700 rounded-lg p-2.5 bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none"
                 value={formData.type}
                 onChange={e => setFormData({ ...formData, type: e.target.value })}
               >
@@ -118,9 +118,9 @@ export default function NewWorkItemPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Priority</label>
+              <label className="block text-sm font-medium text-slate-300 mb-1">Priority</label>
               <select 
-                className="w-full border border-slate-300 rounded-lg p-2.5 bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full border border-slate-700 rounded-lg p-2.5 bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none"
                 value={formData.priority}
                 onChange={e => setFormData({ ...formData, priority: e.target.value })}
               >
@@ -133,9 +133,9 @@ export default function NewWorkItemPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Team *</label>
+            <label className="block text-sm font-medium text-slate-300 mb-1">Team *</label>
             <select 
-              className="w-full border border-slate-300 rounded-lg p-2.5 bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full border border-slate-700 rounded-lg p-2.5 bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none"
               value={formData.teamId}
               onChange={e => setFormData({ ...formData, teamId: e.target.value })}
             >
@@ -144,11 +144,11 @@ export default function NewWorkItemPage() {
                 <option key={t.teamId} value={t.teamId}>{t.teamName}</option>
               ))}
             </select>
-            {teams.length === 0 && <p className="text-xs text-slate-500 mt-1">If empty, you might not be in any teams.</p>}
+            {teams.length === 0 && <p className="text-xs text-slate-400 mt-1">If empty, you might not be in any teams.</p>}
           </div>
 
           <div className="pt-4 border-t border-slate-100 flex justify-end gap-3">
-            <Link href="/work-items" className="px-5 py-2.5 rounded-lg border border-slate-300 text-slate-700 font-medium hover:bg-slate-50">
+            <Link href="/work-items" className="px-5 py-2.5 rounded-lg border border-slate-700 text-slate-300 font-medium hover:bg-slate-800/50">
               Cancel
             </Link>
             <button 

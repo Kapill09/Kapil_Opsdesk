@@ -10,28 +10,50 @@ import {
   workItems, 
   itemEvents, 
   comments,
+  notifications,
+  outbox,
+  idempotencyKeys,
   workItemTypeEnum,
   workItemStatusEnum,
   workItemPriorityEnum
 } from '../lib/db/schema';
 import { sql } from 'drizzle-orm';
-import { randomUUID } from 'crypto';
+
+function getDeterministicId(prefix: string, index: number) {
+  const hexPrefix = prefix === 'team' ? '11111111' :
+                    prefix === 'user' ? '22222222' :
+                    prefix === 'item' ? '33333333' :
+                    prefix === 'cmnt' ? '44444444' :
+                    prefix === 'evnt' ? '55555555' : '00000000';
+  return `${hexPrefix}-0000-4000-a000-${String(index).padStart(12, '0')}`;
+}
 
 async function seed() {
   console.log('Seeding development data...');
+  
+  // Clear existing data to ensure clean deterministic run
+  await db.delete(notifications);
+  await db.delete(outbox);
+  await db.delete(itemEvents);
+  await db.delete(comments);
+  await db.delete(idempotencyKeys);
+  await db.delete(workItems);
+  await db.delete(memberships);
+  await db.delete(users);
+  await db.delete(teams);
 
   // 1. Teams
   const teamData = [
-    { id: randomUUID(), name: 'Platform Engineering' },
-    { id: randomUUID(), name: 'Customer Success' },
-    { id: randomUUID(), name: 'Security & Compliance' },
+    { id: getDeterministicId('team', 1), name: 'Platform Engineering' },
+    { id: getDeterministicId('team', 2), name: 'Customer Success' },
+    { id: getDeterministicId('team', 3), name: 'Security & Compliance' },
   ];
   
   await db.insert(teams).values(teamData).onConflictDoNothing();
   
   // 2. Users
   const usersData = Array.from({ length: 15 }).map((_, i) => ({
-    id: randomUUID(),
+    id: getDeterministicId('user', i),
     name: `User ${i + 1}`,
     email: `user${i + 1}@opsdesk.local`,
   }));
@@ -70,7 +92,7 @@ async function seed() {
   const priorities = ['low', 'medium', 'high', 'critical'] as const;
 
   const workItemsData = Array.from({ length: 40 }).map((_, i) => ({
-    id: randomUUID(),
+    id: getDeterministicId('item', i),
     teamId: teamData[i % 3].id,
     title: sampleTitles[i % sampleTitles.length] + ` #${i}`,
     description: `Detailed description for ${sampleTitles[i % sampleTitles.length]}...`,
@@ -91,7 +113,7 @@ async function seed() {
   workItemsData.forEach((wi, i) => {
     // Initial creation event
     eventsData.push({
-      id: randomUUID(),
+      id: getDeterministicId('evnt', i * 2),
       itemId: wi.id,
       actorId: wi.createdBy,
       type: 'created',
@@ -99,7 +121,7 @@ async function seed() {
     });
 
     if (i % 3 === 0) {
-      const commentId = randomUUID();
+      const commentId = getDeterministicId('cmnt', i);
       commentsData.push({
         id: commentId,
         itemId: wi.id,
@@ -107,7 +129,7 @@ async function seed() {
         content: `Looking into this issue now.`,
       });
       eventsData.push({
-        id: randomUUID(),
+        id: getDeterministicId('evnt', i * 2 + 1),
         itemId: wi.id,
         actorId: usersData[i % 15].id,
         type: 'comment_added',
