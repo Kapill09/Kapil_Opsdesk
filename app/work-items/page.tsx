@@ -155,10 +155,10 @@ function WorkItemsList() {
                   </td>
                   <td className="px-6 py-4">
                     <span className={`px-2.5 py-1 rounded-full text-xs font-medium uppercase tracking-wide ${
-                      item.priority === 'critical' ? 'bg-red-100 text-red-400' :
-                      item.priority === 'high' ? 'bg-orange-100 text-orange-700' :
-                      item.priority === 'medium' ? 'bg-amber-100 text-amber-400' :
-                      'bg-green-100 text-green-400'
+                      item.priority === 'critical' ? 'bg-red-950/30 text-red-400 border border-red-900/50' :
+                      item.priority === 'high' ? 'bg-orange-950/30 text-orange-400 border border-orange-900/50' :
+                      item.priority === 'medium' ? 'bg-amber-950/30 text-amber-400 border border-amber-900/50' :
+                      'bg-green-950/30 text-green-400 border border-green-900/50'
                     }`}>
                       {item.priority}
                     </span>
