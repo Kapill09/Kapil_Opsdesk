@@ -71,8 +71,8 @@ export default function OpsAiPanel({ workItemId }: { workItemId: string }) {
   return (
     <div className="bg-slate-900 rounded-xl border border-slate-800 shadow-sm overflow-hidden">
       {/* Header */}
-      <div className="p-4 border-b border-slate-800 bg-gradient-to-r from-violet-50 to-indigo-50 flex items-center gap-2">
-        <Sparkles size={18} className="text-violet-600" />
+      <div className="p-4 border-b border-slate-800 bg-gradient-to-r from-violet-950/30 to-indigo-950/30 flex items-center gap-2">
+        <Sparkles size={18} className="text-violet-500" />
         <h3 className="font-semibold text-slate-200">Ops AI</h3>
         <span className="text-xs text-slate-400 ml-auto">Read-only assistant</span>
       </div>
@@ -84,7 +84,7 @@ export default function OpsAiPanel({ workItemId }: { workItemId: string }) {
             key={prompt}
             onClick={() => askQuestion(prompt)}
             disabled={isLoading}
-            className="text-xs px-3 py-1.5 rounded-full border border-violet-200 text-violet-700 hover:bg-violet-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="text-xs px-3 py-1.5 rounded-full border border-violet-900/50 text-violet-400 hover:bg-violet-900/50 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {prompt}
           </button>
@@ -163,7 +163,7 @@ export default function OpsAiPanel({ workItemId }: { workItemId: string }) {
                         ? 'bg-blue-950/30 text-blue-400 border border-blue-900/50'
                         : source.type === 'comment'
                         ? 'bg-green-950/30 text-green-400 border border-green-900/50'
-                        : 'bg-orange-50 text-orange-700 border border-orange-200'
+                        : 'bg-orange-950/30 text-orange-400 border border-orange-900/50'
                     }`}
                     title={source.summary}
                   >
