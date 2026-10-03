@@ -1,6 +1,6 @@
-# OpsFlow AI
+# OpsDesk
 
-OpsFlow AI is an internal operational-work management application for the Newtonite Software Engineering Challenge. It provides a robust and reliable platform to track customer issues, engineering problems, production incidents, and operational tasks.
+OpsDesk is an internal operational-work management application for the Newtonite Software Engineering Challenge. It provides a robust and reliable platform to track customer issues, engineering problems, production incidents, and operational tasks.
 
 ## Current Architecture
 The system is built as a modular monolith. It uses a server-driven architecture where the database is the source of truth, avoiding unnecessary microservices. It features:

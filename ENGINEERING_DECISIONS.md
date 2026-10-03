@@ -1,6 +1,6 @@
 # Engineering Decisions
 
-This document captures the architectural decisions made for OpsFlow AI to ensure correctness and maintainability.
+This document captures the architectural decisions made for OpsDesk to ensure correctness and maintainability.
 
 ## 1. PostgreSQL as the system of record
 - **Decision:** Use PostgreSQL as the single source of truth and system of record for all data.
