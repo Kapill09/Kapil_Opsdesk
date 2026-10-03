@@ -6,7 +6,7 @@ import { WorkItemService } from '../server/services/workItems';
 import crypto from 'crypto';
 
 describe('Concurrency & Idempotency', () => {
-  let user1: any, user2: any, team: any;
+  let user1: typeof users.$inferSelect, user2: typeof users.$inferSelect, team: typeof teams.$inferSelect;
 
   beforeAll(async () => {
     const r1 = Math.random().toString();
@@ -26,7 +26,7 @@ describe('Concurrency & Idempotency', () => {
     // Teardown is done by global reset or simply ignored for these tests 
   });
 
-  const getMockUser = (user: any) => ({
+  const getMockUser = (user: typeof users.$inferSelect) => ({
     id: user.id,
     name: user.name,
     email: user.email,
@@ -34,7 +34,7 @@ describe('Concurrency & Idempotency', () => {
   });
 
   it('Optimistic Concurrency: Update increments version and stale update returns 409', async () => {
-    const item: any = await WorkItemService.create({
+    const item = await WorkItemService.create({
       teamId: team.id,
       title: 'Concurrency Test',
       description: 'Desc',
@@ -46,7 +46,7 @@ describe('Concurrency & Idempotency', () => {
     expect(item.version).toBe(1);
 
     // User A updates it
-    const updated: any = await WorkItemService.update(item.id, {
+    const updated = await WorkItemService.update(item.id, {
       version: 1,
       status: 'in_progress',
     }, getMockUser(user1));
@@ -69,7 +69,7 @@ describe('Concurrency & Idempotency', () => {
   });
 
   it('Concurrent Claim: Only one succeeds, other fails', async () => {
-    const item: any = await WorkItemService.create({
+    const item = await WorkItemService.create({
       teamId: team.id,
       title: 'Claim Test',
       description: 'Desc',
@@ -99,7 +99,7 @@ describe('Concurrency & Idempotency', () => {
   });
 
   it('Idempotency: Same key submitted twice produces one effect', async () => {
-    const item: any = await WorkItemService.create({
+    const item = await WorkItemService.create({
       teamId: team.id,
       title: 'Idempotency Test',
       description: 'Desc',
@@ -111,7 +111,7 @@ describe('Concurrency & Idempotency', () => {
     const idempotencyKey = crypto.randomUUID();
 
     // Concurrent duplicate request
-    const results: any[] = await Promise.all([
+    const results = await Promise.all([
       WorkItemService.claim(item.id, getMockUser(user1), idempotencyKey),
       WorkItemService.claim(item.id, getMockUser(user1), idempotencyKey),
     ]);

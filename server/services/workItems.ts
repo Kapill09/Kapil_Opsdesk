@@ -1,5 +1,5 @@
 import { db } from '../../lib/db';
-import { workItems, itemEvents, users, teams, comments, outbox, idempotencyKeys } from '../../lib/db/schema';
+import { workItems, itemEvents, comments, outbox, idempotencyKeys } from '../../lib/db/schema';
 import { eq, desc, ilike, or, and, sql, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 import { createWorkItemSchema, updateWorkItemSchema, paginationQuerySchema, workItemFilterSchema } from '../../lib/validation';
@@ -52,7 +52,7 @@ export class WorkItemService {
              )
            )
          );
-       } catch (e) {
+       } catch {
          // ignore invalid cursor
        }
     }
@@ -105,7 +105,7 @@ export class WorkItemService {
         const existingKey = await tx.query.idempotencyKeys.findFirst({
           where: and(eq(idempotencyKeys.key, idempotencyKey), eq(idempotencyKeys.userId, user.id))
         });
-        if (existingKey) return existingKey.response;
+        if (existingKey) return existingKey.response as typeof workItems.$inferSelect;
       }
       const [newItem] = await tx.insert(workItems).values({
         teamId: data.teamId,
@@ -152,7 +152,7 @@ export class WorkItemService {
         const existingKey = await tx.query.idempotencyKeys.findFirst({
           where: and(eq(idempotencyKeys.key, idempotencyKey), eq(idempotencyKeys.userId, user.id))
         });
-        if (existingKey) return existingKey.response;
+        if (existingKey) return existingKey.response as typeof workItems.$inferSelect;
       }
 
       const existing = await tx.query.workItems.findFirst({
@@ -223,7 +223,7 @@ export class WorkItemService {
           const existingKey = await tx.query.idempotencyKeys.findFirst({
             where: and(eq(idempotencyKeys.key, idempotencyKey), eq(idempotencyKeys.userId, user.id))
           });
-          if (existingKey?.response) return existingKey.response;
+          if (existingKey?.response) return existingKey.response as typeof workItems.$inferSelect;
           throw new APIError(409, 'CONCURRENT_REQUEST', { message: 'Duplicate request is processing.' });
         }
       }

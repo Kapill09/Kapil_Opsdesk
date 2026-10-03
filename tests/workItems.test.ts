@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { WorkItemService } from '../server/services/workItems';
 import { CommentService } from '../server/services/comments';
 import { db } from '../lib/db';
-import { users, teams, workItems } from '../lib/db/schema';
+import { users, teams } from '../lib/db/schema';
 import { randomUUID } from 'crypto';
 
 describe('Work Items & Comments Integration', () => {
@@ -30,7 +30,7 @@ describe('Work Items & Comments Integration', () => {
       priority: 'high' as const,
     };
 
-    const newItem: any = await WorkItemService.create(itemData, mockUser);
+    const newItem = await WorkItemService.create(itemData, mockUser);
 
     expect(newItem).toBeDefined();
     expect(newItem.id).toBeTypeOf('string');
@@ -61,7 +61,7 @@ describe('Work Items & Comments Integration', () => {
       memberships: [{ teamId, role: 'member', teamName: 'Test Team 2' }]
     };
 
-    const newItem: any = await WorkItemService.create({
+    const newItem = await WorkItemService.create({
       teamId,
       title: 'Test Issue For Comment',
       description: 'Need comments',

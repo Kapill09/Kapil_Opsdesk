@@ -12,12 +12,8 @@ import {
   comments,
   notifications,
   outbox,
-  idempotencyKeys,
-  workItemTypeEnum,
-  workItemStatusEnum,
-  workItemPriorityEnum
+  idempotencyKeys
 } from '../lib/db/schema';
-import { sql } from 'drizzle-orm';
 
 function getDeterministicId(prefix: string, index: number) {
   const hexPrefix = prefix === 'team' ? '11111111' :
@@ -107,8 +103,8 @@ async function seed() {
   await db.insert(workItems).values(workItemsData).onConflictDoNothing();
 
   // 5. Comments & Events
-  const commentsData: any[] = [];
-  const eventsData: any[] = [];
+  const commentsData: (typeof comments.$inferInsert)[] = [];
+  const eventsData: (typeof itemEvents.$inferInsert)[] = [];
 
   workItemsData.forEach((wi, i) => {
     // Initial creation event

@@ -3,7 +3,7 @@ import { getCurrentUser } from '../../../lib/auth';
 import { AuthError } from '../../../lib/authorization';
 import { handleAPIError } from '../../../lib/errors';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const user = await getCurrentUser();
     if (!user) throw new AuthError(401, 'Unauthorized');

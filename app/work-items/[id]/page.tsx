@@ -1,16 +1,16 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useParams, useRouter } from 'next/navigation';
+
 import { useState, use } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, MessageSquare, Clock, User, AlertCircle, HandHeart } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Clock, User, AlertCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import OpsAiPanel from '../../../components/OpsAiPanel';
 
 export default function WorkItemDetail(props: { params: Promise<{ id: string }> }) {
   const params = use(props.params);
-  const router = useRouter();
+
   const queryClient = useQueryClient();
   const [comment, setComment] = useState('');
   const [conflictError, setConflictError] = useState<string | null>(null);
@@ -168,7 +168,7 @@ export default function WorkItemDetail(props: { params: Promise<{ id: string }> 
             </div>
             <div className="p-6 space-y-6">
               {item.comments?.length > 0 ? (
-                item.comments.map((c: any) => (
+                item.comments.map((c: { id: string, content: string, createdAt: string }) => (
                   <div key={c.id} className="flex gap-4">
                     <div className="w-8 h-8 rounded-full bg-blue-900/30 flex items-center justify-center text-blue-400 flex-shrink-0">
                       <User size={14} />
@@ -272,7 +272,7 @@ export default function WorkItemDetail(props: { params: Promise<{ id: string }> 
               <Clock size={16} /> Activity
             </h3>
             <div className="space-y-4">
-              {item.events?.map((e: any) => (
+              {item.events?.map((e: { id: string, type: string, createdAt: string }) => (
                 <div key={e.id} className="relative pl-4 border-l-2 border-slate-800 text-sm">
                   <div className="absolute w-2 h-2 rounded-full bg-slate-400 -left-[5px] top-1.5" />
                   <p className="text-slate-200">

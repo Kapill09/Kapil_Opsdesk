@@ -2,11 +2,11 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { db } from '../lib/db';
 import { outbox, notifications, users } from '../lib/db/schema';
 import { eq, sql } from 'drizzle-orm';
-import { WorkItemService } from '../server/services/workItems';
+
 
 // Minimal version of processEvent from worker.ts for testing
-async function processEvent(event: any) {
-  const payload = event.payload as any;
+async function processEvent(event: { id: string, type: string, payload: unknown }) {
+  const payload = event.payload as { actorId: string };
   await db.transaction(async (tx) => {
     const existing = await tx.query.notifications.findFirst({
       where: sql`payload->>'eventId' = ${event.id}`
@@ -23,7 +23,7 @@ async function processEvent(event: any) {
 }
 
 describe('Outbox & Worker Processing', () => {
-  let user: any;
+  let user: typeof users.$inferSelect;
 
   beforeAll(async () => {
     const u = await db.query.users.findFirst();

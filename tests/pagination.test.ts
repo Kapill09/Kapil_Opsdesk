@@ -4,7 +4,7 @@ import { users, teams, memberships, workItems } from '../lib/db/schema';
 import { WorkItemService } from '../server/services/workItems';
 
 describe('Compound Cursor Pagination', () => {
-  let user: any, team: any;
+  let user: typeof users.$inferSelect, team: typeof teams.$inferSelect;
 
   beforeAll(async () => {
     const r = Math.random().toString();

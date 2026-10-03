@@ -6,13 +6,12 @@ import {
   varchar,
   integer,
   jsonb,
-  boolean,
-  unique,
+
   primaryKey,
   pgEnum,
   index
 } from 'drizzle-orm/pg-core';
-import { relations } from 'drizzle-orm';
+
 
 export const workItemTypeEnum = pgEnum('work_item_type', [
   'customer_issue',

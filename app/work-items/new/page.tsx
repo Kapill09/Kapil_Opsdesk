@@ -15,7 +15,7 @@ export default function NewWorkItemPage() {
   // Wait, in this scenario, the prompt says "Use existing users, teams".
   // Let's create a quick API to fetch user's teams so we can populate the dropdown.
   
-  const [teams, setTeams] = useState<any[]>([]);
+  const [teams, setTeams] = useState<{ teamId: string, teamName: string }[]>([]);
   useEffect(() => {
     fetch('/api/teams').then(r => r.json()).then(data => {
       if(Array.isArray(data)) setTeams(data);
@@ -52,7 +52,7 @@ export default function NewWorkItemPage() {
     onSuccess: (data) => {
       router.push(`/work-items/${data.id}`);
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       setError(err.message);
     }
   });

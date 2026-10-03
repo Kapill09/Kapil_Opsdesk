@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { WorkItemService } from '../../../server/services/workItems';
 import { createWorkItemSchema, paginationQuerySchema, workItemFilterSchema } from '../../../lib/validation';
 import { handleAPIError } from '../../../lib/errors';
-import { z } from 'zod';
+
 import { getCurrentUser } from '../../../lib/auth';
 import { AuthError } from '../../../lib/authorization';
 

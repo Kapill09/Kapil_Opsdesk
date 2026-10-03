@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { CommentService } from '../../../../../server/services/comments';
 import { createCommentSchema } from '../../../../../lib/validation';
-import { handleAPIError, APIError } from '../../../../../lib/errors';
+import { handleAPIError } from '../../../../../lib/errors';
 import { z } from 'zod';
 import { getCurrentUser } from '../../../../../lib/auth';
 import { AuthError } from '../../../../../lib/authorization';

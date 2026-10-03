@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Plus, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Search, ChevronRight } from 'lucide-react';
 import { Suspense, useState, useEffect } from 'react';
 
 function WorkItemsList() {
@@ -20,11 +20,19 @@ function WorkItemsList() {
   const [searchInput, setSearchInput] = useState(search);
 
   useEffect(() => {
+    if (searchInput === search) return;
     const handler = setTimeout(() => {
-      updateFilter('search', searchInput);
+      const params = new URLSearchParams(searchParams.toString());
+      if (searchInput) {
+        params.set('search', searchInput);
+      } else {
+        params.delete('search');
+      }
+      params.delete('cursor');
+      router.push(`/work-items?${params.toString()}`);
     }, 300);
     return () => clearTimeout(handler);
-  }, [searchInput]);
+  }, [searchInput, search, searchParams, router]);
 
   const updateFilter = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -145,7 +153,7 @@ function WorkItemsList() {
                 </td>
               </tr>
             ) : (
-              data?.items.map((item: any) => (
+              data?.items.map((item: { id: string, title: string, status: string, priority: string, type: string, updatedAt: string }) => (
                 <tr key={item.id} className="hover:bg-slate-800/50 transition cursor-pointer" onClick={() => router.push(`/work-items/${item.id}`)}>
                   <td className="px-6 py-4 font-medium text-white">{item.title}</td>
                   <td className="px-6 py-4">

@@ -7,7 +7,7 @@
  * The external LLM call is mocked — tests never depend on live API calls.
  */
 
-import { describe, it, expect, vi, beforeAll, beforeEach, afterAll } from 'vitest';
+import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { db } from '../lib/db';
 import { users, teams, memberships, workItems, comments, itemEvents } from '../lib/db/schema';
 import { retrieveWorkItemContext, askOpsAi } from '../server/services/opsAi';
@@ -43,9 +43,9 @@ vi.mock('../server/ai/provider', () => ({
 
 // ─── Test Data Setup ─────────────────────────────────────────────
 
-let user1: any, user2: any, team1: any, team2: any;
-let workItem1: any; // user1 can access
-let workItem2: any; // user2 can access, user1 cannot
+let user1: typeof users.$inferSelect, user2: typeof users.$inferSelect, team1: typeof teams.$inferSelect, team2: typeof teams.$inferSelect;
+let workItem1: typeof workItems.$inferSelect; // user1 can access
+let workItem2: typeof workItems.$inferSelect; // user2 can access, user1 cannot
 
 beforeAll(async () => {
   const r = randomUUID().slice(0, 8);
@@ -106,7 +106,7 @@ beforeAll(async () => {
   }).returning();
 });
 
-const mockUser = (user: any, team: any) => ({
+const mockUser = (user: typeof users.$inferSelect, team: typeof teams.$inferSelect) => ({
   id: user.id,
   name: user.name,
   email: user.email,
@@ -221,7 +221,7 @@ describe('Ops AI — Answer Generation (mocked LLM)', () => {
 
   it('invalid citations from LLM are filtered out', async () => {
     const { generateCompletion } = await import('../server/ai/provider');
-    (generateCompletion as any).mockResolvedValueOnce({
+    (generateCompletion as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       content: 'Answer with fake citation [FAKE-99] and real [WI].',
       finishReason: 'stop',
     });
@@ -236,7 +236,7 @@ describe('Ops AI — Answer Generation (mocked LLM)', () => {
 describe('Ops AI — LLM Failure Handling', () => {
   it('missing LLM configuration produces a graceful error', async () => {
     const { isLLMConfigured } = await import('../server/ai/provider');
-    (isLLMConfigured as any).mockReturnValueOnce(false);
+    (isLLMConfigured as unknown as ReturnType<typeof vi.fn>).mockReturnValueOnce(false);
 
     await expect(
       askOpsAi(workItem1.id, 'Summarize', mockUser(user1, team1))
@@ -245,7 +245,7 @@ describe('Ops AI — LLM Failure Handling', () => {
 
   it('LLM provider failure produces a safe error', async () => {
     const { generateCompletion, LLMProviderError } = await import('../server/ai/provider');
-    (generateCompletion as any).mockRejectedValueOnce(
+    (generateCompletion as unknown as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
       new LLMProviderError('LLM provider is temporarily unavailable.', 503, true)
     );
 

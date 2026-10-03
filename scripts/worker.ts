@@ -1,10 +1,10 @@
 import { db } from '../lib/db';
 import { outbox, notifications } from '../lib/db/schema';
-import { eq, sql, inArray, and } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 
-async function processEvent(tx: any, event: typeof outbox.$inferSelect) {
+async function processEvent(tx: Parameters<Parameters<typeof db.transaction>[0]>[0], event: typeof outbox.$inferSelect) {
   // Simple observable side effect: create notification
-  const payload = event.payload as any;
+  const payload = event.payload as { actorId: string, itemId: string };
   const actorId = payload.actorId;
   const itemId = payload.itemId;
   
