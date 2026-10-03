@@ -36,3 +36,13 @@ This document captures the architectural decisions made for OpsDesk to ensure co
 - **Reasoning:** The server must independently fetch the resource (e.g., work item) and verify the user's role in the associated team before permitting an action (e.g., resolving the item).
 - **Trade-offs:** Requires more database queries during authorization, but caching or optimized queries can mitigate performance impact.
 - **Alternative considered:** Trusting the frontend to send a valid role token, which is a massive security vulnerability.
+
+## 6. Authorization Model & Identity Abstraction
+- **Decision:** Implemented a replaceable identity abstraction (`getCurrentUser()`) and centralized RBAC (`can()`, `authorize()`).
+- **Context:** Authentication infrastructure (SSO/NextAuth) is out of scope, but robust authorization is critical.
+- **Reasoning:**
+  - **Server-Side Authorization:** It guarantees the API acts as an authoritative boundary. Malicious clients cannot bypass rules by crafting HTTP requests.
+  - **Database-Driven Resource `team_id`:** We must derive the resource's `team_id` directly from the database row (e.g. `workItems.teamId`) rather than trusting a client-supplied property which could be tampered with.
+  - **Centralized Permissions:** Having a single `can(user, action, resource)` prevents fragmented and inconsistent permission checks scattered across routes.
+  - **UI Permissive Masking:** UI hides actions (like editing unowned items) for UX, but is never relied upon as a security measure.
+  - **Replaceable Identity:** `getCurrentUser()` simply mocks the first deterministic database user. It's built cleanly so a real OIDC/SSO provider can drop in without refactoring business logic.

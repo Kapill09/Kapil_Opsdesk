@@ -1,14 +1,27 @@
 import { db } from '../../lib/db';
 import { workItems, itemEvents, users, teams, comments } from '../../lib/db/schema';
-import { eq, desc, ilike, or, and, sql } from 'drizzle-orm';
+import { eq, desc, ilike, or, and, sql, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 import { createWorkItemSchema, updateWorkItemSchema, paginationQuerySchema, workItemFilterSchema } from '../../lib/validation';
+import { CurrentUser } from '../../lib/auth';
+import { authorize } from '../../lib/authorization';
 
 export class WorkItemService {
-  static async list(params: z.infer<typeof paginationQuerySchema> & z.infer<typeof workItemFilterSchema>) {
+  static async list(params: z.infer<typeof paginationQuerySchema> & z.infer<typeof workItemFilterSchema>, user: CurrentUser) {
     const { limit, cursor, search, status, priority, type, assigneeId, teamId } = params;
 
     const conditions = [];
+
+    // Base authorization: restrict to teams the user is a member of (unless admin)
+    const isGlobalAdmin = user.memberships.some(m => m.role === 'admin');
+    if (!isGlobalAdmin) {
+      const allowedTeamIds = user.memberships.map(m => m.teamId);
+      if (allowedTeamIds.length === 0) {
+        // Not in any teams and not admin -> returns empty
+        return { items: [], nextCursor: undefined };
+      }
+      conditions.push(inArray(workItems.teamId, allowedTeamIds));
+    }
 
     if (status) conditions.push(eq(workItems.status, status));
     if (priority) conditions.push(eq(workItems.priority, priority));
@@ -51,12 +64,14 @@ export class WorkItemService {
     return { items, nextCursor };
   }
 
-  static async getById(id: string) {
+  static async getById(id: string, user: CurrentUser) {
     const item = await db.query.workItems.findFirst({
       where: eq(workItems.id, id),
     });
 
     if (!item) return null;
+
+    authorize(user, 'view', { teamId: item.teamId });
 
     // Fetch related events and comments (to avoid N+1 and keep it simple for now, we do separate batched queries or joins)
     // Actually, drizzle relations make this easier if defined, but we can just query them separately
@@ -73,7 +88,10 @@ export class WorkItemService {
     return { ...item, events, comments: itemComments };
   }
 
-  static async create(data: z.infer<typeof createWorkItemSchema>, creatorId: string) {
+  static async create(data: z.infer<typeof createWorkItemSchema>, user: CurrentUser) {
+    authorize(user, 'create', { teamId: data.teamId });
+    const creatorId = user.id;
+
     return await db.transaction(async (tx) => {
       const [newItem] = await tx.insert(workItems).values({
         teamId: data.teamId,
@@ -98,13 +116,15 @@ export class WorkItemService {
     });
   }
 
-  static async update(id: string, data: z.infer<typeof updateWorkItemSchema>, actorId: string) {
+  static async update(id: string, data: z.infer<typeof updateWorkItemSchema>, user: CurrentUser) {
     return await db.transaction(async (tx) => {
       const existing = await tx.query.workItems.findFirst({
         where: eq(workItems.id, id)
       });
 
       if (!existing) throw new Error('NOT_FOUND');
+      
+      authorize(user, 'update', { teamId: existing.teamId });
       
       const { version, ...updateData } = data;
       
@@ -124,7 +144,7 @@ export class WorkItemService {
 
       await tx.insert(itemEvents).values({
         itemId: id,
-        actorId: actorId,
+        actorId: user.id,
         type: 'updated',
         payload: { before: existing, after: updatedItem },
       });

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { AuthError } from '../authorization';
 
 export class APIError extends Error {
   constructor(public statusCode: number, message: string) {
@@ -15,6 +16,10 @@ export function handleAPIError(error: unknown) {
   }
 
   if (error instanceof APIError) {
+    return Response.json({ error: error.message }, { status: error.statusCode });
+  }
+
+  if (error instanceof AuthError) {
     return Response.json({ error: error.message }, { status: error.statusCode });
   }
 

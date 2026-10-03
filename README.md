@@ -56,3 +56,16 @@ Run unit and integration tests via Vitest:
 ```bash
 npm run test
 ```
+
+## Available Pages & Routes
+- `/`: Dashboard showing system-wide operational metrics
+- `/work-items`: Filterable, paginated, and authorized list of work items
+- `/work-items/new`: Create a new work item for your team
+- `/work-items/[id]`: Detailed view of an item including comments and activity timeline
+
+## Identity & Authorization Model
+- **Authentication**: **Development identity is used for the assessment; production authentication/SSO is not implemented.** The application automatically selects the first seeded user from the database (`getCurrentUser()` mock) for development simplicity.
+- **Authorization**: Role-Based Access Control (RBAC) is implemented **server-side**.
+  - Users can only access resources belonging to teams they are members of.
+  - UI strictly hides actions unavailable to users (e.g. Lead/Admin only actions), but **API endpoints are the authoritative security layer**.
+  - Missing or unauthorized identity will gracefully return 401 or 403 respectively, with UI appropriately masking `404` for secure unpermitted resource hiding.

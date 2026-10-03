@@ -12,6 +12,13 @@ describe('Work Items & Comments Integration', () => {
     const userId = randomUUID();
     await db.insert(teams).values({ id: teamId, name: 'Test Team' });
     await db.insert(users).values({ id: userId, name: 'Test User', email: `${userId}@test.com` });
+    
+    const mockUser = {
+      id: userId,
+      name: 'Test User',
+      email: `${userId}@test.com`,
+      memberships: [{ teamId, role: 'lead', teamName: 'Test Team' }]
+    };
 
     // 2. Create the work item
     const itemData = {
@@ -23,14 +30,14 @@ describe('Work Items & Comments Integration', () => {
       priority: 'high' as const,
     };
 
-    const newItem = await WorkItemService.create(itemData, userId);
+    const newItem = await WorkItemService.create(itemData, mockUser);
 
     expect(newItem).toBeDefined();
     expect(newItem.id).toBeTypeOf('string');
     expect(newItem.title).toBe('Test Issue');
 
     // 3. Verify it's persisted by fetching it
-    const fetched = await WorkItemService.getById(newItem.id);
+    const fetched = await WorkItemService.getById(newItem.id, mockUser);
     expect(fetched).not.toBeNull();
     expect(fetched!.title).toBe('Test Issue');
 
@@ -47,6 +54,13 @@ describe('Work Items & Comments Integration', () => {
     await db.insert(teams).values({ id: teamId, name: 'Test Team 2' });
     await db.insert(users).values({ id: userId, name: 'Test User 2', email: `${userId}@test.com` });
 
+    const mockUser = {
+      id: userId,
+      name: 'Test User 2',
+      email: `${userId}@test.com`,
+      memberships: [{ teamId, role: 'member', teamName: 'Test Team 2' }]
+    };
+
     const newItem = await WorkItemService.create({
       teamId,
       title: 'Test Issue For Comment',
@@ -54,16 +68,16 @@ describe('Work Items & Comments Integration', () => {
       type: 'operational_task',
       status: 'open',
       priority: 'low',
-    }, userId);
+    }, mockUser);
 
     // Add comment
-    const comment = await CommentService.create(newItem.id, userId, { content: 'My first comment' });
+    const comment = await CommentService.create(newItem.id, mockUser, { content: 'My first comment' });
     
     expect(comment.id).toBeTypeOf('string');
     expect(comment.content).toBe('My first comment');
 
     // Fetch item to verify events
-    const fetched = await WorkItemService.getById(newItem.id);
+    const fetched = await WorkItemService.getById(newItem.id, mockUser);
     expect(fetched!.comments).toHaveLength(1);
     expect(fetched!.events).toHaveLength(2); // 1 for created, 1 for comment_added
     
@@ -72,8 +86,16 @@ describe('Work Items & Comments Integration', () => {
   });
 
   it('pagination returns a next cursor when more data exists', async () => {
+    // Admin user to see everything
+    const mockAdmin = {
+      id: randomUUID(),
+      name: 'Admin',
+      email: 'admin@opsdesk.local',
+      memberships: [{ teamId: randomUUID(), role: 'admin', teamName: 'Admin Team' }]
+    };
+
     // List with a limit of 1
-    const result = await WorkItemService.list({ limit: 1 });
+    const result = await WorkItemService.list({ limit: 1 }, mockAdmin);
     
     expect(Array.isArray(result.items)).toBe(true);
     // If the DB has more than 1 item (which it should from seed or tests), nextCursor is defined
@@ -85,7 +107,13 @@ describe('Work Items & Comments Integration', () => {
 
   it('requesting a nonexistent work item returns appropriate error or null', async () => {
     const fakeId = randomUUID();
-    const result = await WorkItemService.getById(fakeId);
+    const mockAdmin = {
+      id: randomUUID(),
+      name: 'Admin',
+      email: 'admin@opsdesk.local',
+      memberships: [{ teamId: randomUUID(), role: 'admin', teamName: 'Admin Team' }]
+    };
+    const result = await WorkItemService.getById(fakeId, mockAdmin);
     expect(result).toBeNull();
   });
 });
