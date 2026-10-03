@@ -34,22 +34,19 @@ describe('Compound Cursor Pagination', () => {
 
     // Fetch page 1 (limit 2)
     const page1 = await WorkItemService.list({ limit: 2, teamId: team.id }, getMockUser());
-    console.log('Page 1 items:', page1.items.map(i => i.id));
-    console.log('Page 1 cursor:', page1.nextCursor);
+
     expect(page1.items.length).toBe(2);
     expect(page1.nextCursor).toBeTruthy();
 
     // Fetch page 2 (limit 2)
     const page2 = await WorkItemService.list({ limit: 2, cursor: page1.nextCursor, teamId: team.id }, getMockUser());
-    console.log('Page 2 items:', page2.items.map(i => i.id));
-    console.log('Page 2 cursor:', page2.nextCursor);
+
     expect(page2.items.length).toBe(2);
     expect(page2.nextCursor).toBeTruthy();
 
     // Fetch page 3 (limit 2)
     const page3 = await WorkItemService.list({ limit: 2, cursor: page2.nextCursor, teamId: team.id }, getMockUser());
-    console.log('Page 3 items:', page3.items.map(i => i.id));
-    console.log('Page 3 cursor:', page3.nextCursor);
+
     expect(page3.items.length).toBe(1); // 5 total, so 1 left
     expect(page3.nextCursor).toBeUndefined();
 

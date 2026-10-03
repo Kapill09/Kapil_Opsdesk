@@ -12,7 +12,7 @@
  */
 
 import { db } from '../../lib/db';
-import { workItems, comments, itemEvents, users } from '../../lib/db/schema';
+import { workItems, comments, itemEvents } from '../../lib/db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { CurrentUser } from '../../lib/auth';
 import { authorize } from '../../lib/authorization';
