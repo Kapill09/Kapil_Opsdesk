@@ -65,3 +65,14 @@ This document captures the architectural decisions made for OpsDesk to ensure co
 ## 10. Deterministic Compound Cursor
 - **Decision:** Implemented compound pagination cursor (`createdAt + id`).
 - **Reasoning:** Simple single-column `createdAt` cursors result in skipped records or infinite loops when multiple records share exactly the same timestamp. By chaining `id`, ties are predictably broken without data loss.
+
+## 11. Ops AI RAG Architecture (PostgreSQL vs Vector DB)
+- **Decision:** Use deterministic PostgreSQL retrieval for RAG context instead of a dedicated Vector Database (e.g., Pinecone, Milvus, Weaviate).
+- **Reasoning:** 
+  - **Bounded Context:** For this operational workflow, the context of a single work item (metadata, comments, events) is inherently bounded and small enough to fit within an LLM's context window.
+  - **Explainability:** Retrieval is deterministic, easily explainable, and follows existing RBAC authorization perfectly without duplication.
+  - **Infrastructure Simplicity:** Introducing a vector DB is unnecessary overhead for retrieving specific, structured relational data associated with a single UUID. Vector search can be introduced later if cross-item semantic search becomes a requirement.
+- **Security & Limitations:**
+  - AI is strictly read-only; it cannot mutate data.
+  - Retrieved content (titles, comments, descriptions) is treated as untrusted data to mitigate prompt injection, though perfect prevention is not guaranteed by prompting alone.
+  - LLM availability is not required for core OpsDesk functionality; the app degrades gracefully if the provider fails.

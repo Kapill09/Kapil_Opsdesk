@@ -60,3 +60,9 @@ export const workItemFilterSchema = z.object({
   assigneeId: z.string().uuid().optional(),
   teamId: z.string().uuid().optional(),
 });
+
+export const opsAiQuestionSchema = z.object({
+  question: z.string()
+    .min(3, 'Question must be at least 3 characters')
+    .max(1000, 'Question must be at most 1000 characters'),
+});

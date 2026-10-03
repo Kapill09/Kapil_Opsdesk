@@ -17,7 +17,7 @@ The system is built as a modular monolith. It uses a server-driven architecture 
 - **Optimistic Concurrency**: Stale data protection using versioning.
 - **Idempotency**: Preventing duplicate operations using Idempotency Keys.
 - **Outbox Pattern Worker**: Reliable background processing without Kafka/Redis.
-- **AI/RAG Layer**: Contextual AI assistance for operations using LangChain/vector databases.
+- **AI/RAG Layer (Ops AI)**: Contextual, strictly read-only AI assistance for operational workflows, powered by a deterministic PostgreSQL retrieval strategy (no external vector database needed).
 
 ## Local Setup
 
@@ -26,6 +26,12 @@ The system is built as a modular monolith. It uses a server-driven architecture 
 2. Add it to a `.env.local` (and optionally `.env`) file in the root:
 ```env
 DATABASE_URL="postgresql://user:password@host/dbname"
+
+# Ops AI Configuration
+LLM_API_KEY="your_provider_api_key_here"
+LLM_PROVIDER="openai" # Optional, defaults to openai
+LLM_MODEL="gpt-4o-mini" # Optional
+LLM_BASE_URL="https://api.openai.com/v1" # Optional
 ```
 
 ### Installation

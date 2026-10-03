@@ -6,6 +6,7 @@ import { useState, use } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, MessageSquare, Clock, User, AlertCircle, HandHeart } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import OpsAiPanel from '../../../components/OpsAiPanel';
 
 export default function WorkItemDetail(props: { params: Promise<{ id: string }> }) {
   const params = use(props.params);
@@ -282,6 +283,9 @@ export default function WorkItemDetail(props: { params: Promise<{ id: string }> 
               ))}
             </div>
           </div>
+
+          {/* Ops AI Panel */}
+          <OpsAiPanel workItemId={id} />
         </div>
       </div>
     </div>
