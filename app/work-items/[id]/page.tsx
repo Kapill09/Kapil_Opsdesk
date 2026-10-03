@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
 import { useState, use } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, MessageSquare, Clock, User, AlertCircle } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Clock, User, AlertCircle, HandHeart } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 export default function WorkItemDetail(props: { params: Promise<{ id: string }> }) {
@@ -12,6 +12,7 @@ export default function WorkItemDetail(props: { params: Promise<{ id: string }> 
   const router = useRouter();
   const queryClient = useQueryClient();
   const [comment, setComment] = useState('');
+  const [conflictError, setConflictError] = useState<string | null>(null);
   
   const id = params.id;
 
@@ -31,9 +32,13 @@ export default function WorkItemDetail(props: { params: Promise<{ id: string }> 
 
   const commentMutation = useMutation({
     mutationFn: async (content: string) => {
+      const idempotencyKey = crypto.randomUUID();
       const res = await fetch(`/api/work-items/${id}/comments`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Idempotency-Key': idempotencyKey
+        },
         body: JSON.stringify({ content }),
       });
       if (!res.ok) throw new Error('Failed to post comment');
@@ -42,6 +47,57 @@ export default function WorkItemDetail(props: { params: Promise<{ id: string }> 
     onSuccess: () => {
       setComment('');
       queryClient.invalidateQueries({ queryKey: ['workItem', id] });
+    }
+  });
+
+  const claimMutation = useMutation({
+    mutationFn: async () => {
+      const idempotencyKey = crypto.randomUUID();
+      const res = await fetch(`/api/work-items/${id}/claim`, {
+        method: 'POST',
+        headers: { 'Idempotency-Key': idempotencyKey }
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error?.message || 'Failed to claim');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      setConflictError(null);
+      queryClient.invalidateQueries({ queryKey: ['workItem', id] });
+    },
+    onError: (err: Error) => {
+      setConflictError(err.message);
+      queryClient.invalidateQueries({ queryKey: ['workItem', id] }); // Reconcile
+    }
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (status: string) => {
+      if (!item) throw new Error('Item not loaded');
+      const idempotencyKey = crypto.randomUUID();
+      const res = await fetch(`/api/work-items/${id}`, {
+        method: 'PATCH',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Idempotency-Key': idempotencyKey
+        },
+        body: JSON.stringify({ status, version: item.version }),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error?.message || 'Failed to update');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      setConflictError(null);
+      queryClient.invalidateQueries({ queryKey: ['workItem', id] });
+    },
+    onError: (err: Error) => {
+      setConflictError(err.message);
+      queryClient.invalidateQueries({ queryKey: ['workItem', id] }); // Reconcile
     }
   });
 
@@ -73,6 +129,18 @@ export default function WorkItemDetail(props: { params: Promise<{ id: string }> 
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
+          
+          {conflictError && (
+            <div className="bg-red-50 p-4 rounded-xl border border-red-200 flex gap-3 items-start animate-in fade-in">
+              <AlertCircle className="text-red-600 shrink-0" size={20} />
+              <div>
+                <h3 className="font-semibold text-red-800">Update Failed</h3>
+                <p className="text-red-700 text-sm mt-1">{conflictError}</p>
+                <p className="text-red-700 text-xs mt-2 italic">The page has been refreshed with the latest data.</p>
+              </div>
+            </div>
+          )}
+
           <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
             <div className="flex gap-2 mb-4">
               <span className="px-2.5 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-medium uppercase tracking-wide">
@@ -155,12 +223,44 @@ export default function WorkItemDetail(props: { params: Promise<{ id: string }> 
                 <span className="font-medium text-slate-800 break-all">{item.teamId}</span>
               </div>
               <div>
+                <span className="block text-slate-500 mb-1">Assignee ID</span>
+                {item.assigneeId ? (
+                  <span className="font-medium text-slate-800 break-all">{item.assigneeId}</span>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500 italic">Unassigned</span>
+                    <button 
+                      onClick={() => claimMutation.mutate()}
+                      disabled={claimMutation.isPending}
+                      className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-md font-medium hover:bg-blue-200 disabled:opacity-50"
+                    >
+                      {claimMutation.isPending ? 'Claiming...' : 'Claim'}
+                    </button>
+                  </div>
+                )}
+              </div>
+              <div>
                 <span className="block text-slate-500 mb-1">Created At</span>
                 <span className="font-medium text-slate-800">{new Date(item.createdAt).toLocaleString()}</span>
               </div>
               <div>
                 <span className="block text-slate-500 mb-1">Updated At</span>
                 <span className="font-medium text-slate-800">{new Date(item.updatedAt).toLocaleString()}</span>
+              </div>
+              <div className="pt-2">
+                <span className="block text-slate-500 mb-1">Actions</span>
+                <select 
+                  className="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none"
+                  value={item.status}
+                  disabled={updateMutation.isPending}
+                  onChange={(e) => updateMutation.mutate(e.target.value)}
+                >
+                  <option value="open">Open</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="blocked">Blocked</option>
+                  <option value="resolved">Resolved</option>
+                  <option value="closed">Closed</option>
+                </select>
               </div>
             </div>
           </div>

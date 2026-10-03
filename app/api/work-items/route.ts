@@ -32,10 +32,12 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const data = createWorkItemSchema.parse(body);
 
+    const idempotencyKey = request.headers.get('Idempotency-Key') || undefined;
+
     const user = await getCurrentUser();
     if (!user) throw new AuthError(401, 'Unauthorized');
 
-    const result = await WorkItemService.create(data, user);
+    const result = await WorkItemService.create(data, user, idempotencyKey);
     return Response.json(result, { status: 201 });
   } catch (error) {
     return handleAPIError(error);

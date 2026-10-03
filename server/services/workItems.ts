@@ -1,10 +1,11 @@
 import { db } from '../../lib/db';
-import { workItems, itemEvents, users, teams, comments } from '../../lib/db/schema';
+import { workItems, itemEvents, users, teams, comments, outbox, idempotencyKeys } from '../../lib/db/schema';
 import { eq, desc, ilike, or, and, sql, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 import { createWorkItemSchema, updateWorkItemSchema, paginationQuerySchema, workItemFilterSchema } from '../../lib/validation';
 import { CurrentUser } from '../../lib/auth';
 import { authorize } from '../../lib/authorization';
+import { APIError } from '../../lib/errors';
 
 export class WorkItemService {
   static async list(params: z.infer<typeof paginationQuerySchema> & z.infer<typeof workItemFilterSchema>, user: CurrentUser) {
@@ -38,27 +39,34 @@ export class WorkItemService {
       );
     }
 
-    // Cursor pagination (assuming cursor is a timestamp for simplicity in this milestone)
-    // Format: ISO string of created_at. In a real app, it would be base64(created_at, id)
+    // Cursor pagination using deterministic compound cursor (createdAt + id)
     if (cursor) {
-       // A simplistic cursor: created_at less than cursor
-       conditions.push(sql`${workItems.createdAt} < ${new Date(cursor).toISOString()}`);
+       try {
+         const parsed = JSON.parse(Buffer.from(cursor, 'base64').toString('utf-8'));
+         conditions.push(
+           or(
+             sql`${workItems.createdAt} < ${new Date(parsed.createdAt).toISOString()}`,
+             and(
+               eq(workItems.createdAt, new Date(parsed.createdAt)),
+               sql`${workItems.id} <= ${parsed.id}`
+             )
+           )
+         );
+       } catch (e) {
+         // ignore invalid cursor
+       }
     }
 
     const items = await db.query.workItems.findMany({
       where: conditions.length > 0 ? and(...conditions) : undefined,
-      orderBy: [desc(workItems.createdAt)],
+      orderBy: [desc(workItems.createdAt), desc(workItems.id)],
       limit: limit + 1, // Fetch one extra to determine if there's a next page
-      with: {
-        // We would include assignee info if relationships were fully defined in schema
-        // For now, we'll fetch basic data
-      }
     });
 
     let nextCursor = undefined;
     if (items.length > limit) {
       const nextItem = items.pop();
-      nextCursor = nextItem?.createdAt.toISOString();
+      nextCursor = Buffer.from(JSON.stringify({ createdAt: nextItem?.createdAt, id: nextItem?.id })).toString('base64');
     }
 
     return { items, nextCursor };
@@ -88,11 +96,17 @@ export class WorkItemService {
     return { ...item, events, comments: itemComments };
   }
 
-  static async create(data: z.infer<typeof createWorkItemSchema>, user: CurrentUser) {
+  static async create(data: z.infer<typeof createWorkItemSchema>, user: CurrentUser, idempotencyKey?: string) {
     authorize(user, 'create', { teamId: data.teamId });
     const creatorId = user.id;
 
     return await db.transaction(async (tx) => {
+      if (idempotencyKey) {
+        const existingKey = await tx.query.idempotencyKeys.findFirst({
+          where: and(eq(idempotencyKeys.key, idempotencyKey), eq(idempotencyKeys.userId, user.id))
+        });
+        if (existingKey) return existingKey.response;
+      }
       const [newItem] = await tx.insert(workItems).values({
         teamId: data.teamId,
         title: data.title,
@@ -112,35 +126,65 @@ export class WorkItemService {
         payload: newItem,
       });
 
+      await tx.insert(outbox).values({
+        type: 'item_created',
+        payload: { itemId: newItem.id, actorId: creatorId },
+      });
+
+      if (idempotencyKey) {
+        await tx.insert(idempotencyKeys).values({
+          key: idempotencyKey,
+          userId: user.id,
+          requestHash: 'create',
+          response: newItem,
+        });
+      }
+
       return newItem;
     });
   }
 
-  static async update(id: string, data: z.infer<typeof updateWorkItemSchema>, user: CurrentUser) {
+  static async update(id: string, data: z.infer<typeof updateWorkItemSchema>, user: CurrentUser, idempotencyKey?: string) {
+    if (data.version === undefined) throw new APIError(400, 'Version is required');
+    
     return await db.transaction(async (tx) => {
+      if (idempotencyKey) {
+        const existingKey = await tx.query.idempotencyKeys.findFirst({
+          where: and(eq(idempotencyKeys.key, idempotencyKey), eq(idempotencyKeys.userId, user.id))
+        });
+        if (existingKey) return existingKey.response;
+      }
+
       const existing = await tx.query.workItems.findFirst({
         where: eq(workItems.id, id)
       });
 
-      if (!existing) throw new Error('NOT_FOUND');
+      if (!existing) throw new APIError(404, 'NOT_FOUND');
       
       authorize(user, 'update', { teamId: existing.teamId });
       
       const { version, ...updateData } = data;
       
-      // In a later milestone, we'll handle `version` explicitly for optimistic concurrency.
-      // For now, we just update.
       const updatePayload = {
         ...updateData,
         dueAt: updateData.dueAt ? new Date(updateData.dueAt) : undefined,
         updatedAt: new Date(), 
-        version: existing.version + 1
+        version: sql`${workItems.version} + 1`
       };
       
-      const [updatedItem] = await tx.update(workItems)
+      const updatedItems = await tx.update(workItems)
         .set(updatePayload)
-        .where(eq(workItems.id, id))
+        .where(and(eq(workItems.id, id), eq(workItems.version, version!)))
         .returning();
+
+      if (updatedItems.length === 0) {
+        throw new APIError(409, 'VERSION_CONFLICT', { 
+          message: 'Work item has changed. Refresh and retry.', 
+          currentVersion: existing.version 
+        });
+      }
+      
+      const updatedItem = updatedItems[0];
 
       await tx.insert(itemEvents).values({
         itemId: id,
@@ -148,6 +192,82 @@ export class WorkItemService {
         type: 'updated',
         payload: { before: existing, after: updatedItem },
       });
+
+      await tx.insert(outbox).values({
+        type: 'item_updated',
+        payload: { itemId: id, actorId: user.id },
+      });
+
+      if (idempotencyKey) {
+        await tx.insert(idempotencyKeys).values({
+          key: idempotencyKey,
+          userId: user.id,
+          requestHash: 'update',
+          response: updatedItem,
+        });
+      }
+
+      return updatedItem;
+    });
+  }
+
+  static async claim(id: string, user: CurrentUser, idempotencyKey?: string) {
+    return await db.transaction(async (tx) => {
+      if (idempotencyKey) {
+        const insertResult = await tx.insert(idempotencyKeys)
+          .values({ key: idempotencyKey, userId: user.id, requestHash: 'claim' })
+          .onConflictDoNothing()
+          .returning({ key: idempotencyKeys.key });
+
+        if (insertResult.length === 0) {
+          const existingKey = await tx.query.idempotencyKeys.findFirst({
+            where: and(eq(idempotencyKeys.key, idempotencyKey), eq(idempotencyKeys.userId, user.id))
+          });
+          if (existingKey?.response) return existingKey.response;
+          throw new APIError(409, 'CONCURRENT_REQUEST', { message: 'Duplicate request is processing.' });
+        }
+      }
+
+      const existing = await tx.query.workItems.findFirst({ where: eq(workItems.id, id) });
+      if (!existing) throw new APIError(404, 'NOT_FOUND');
+      authorize(user, 'update', { teamId: existing.teamId }); 
+
+      const updatedItems = await tx.update(workItems)
+        .set({
+          assigneeId: user.id,
+          version: sql`${workItems.version} + 1`,
+          updatedAt: new Date()
+        })
+        .where(and(eq(workItems.id, id), sql`${workItems.assigneeId} IS NULL`))
+        .returning();
+
+      if (updatedItems.length === 0) {
+        const current = await tx.query.workItems.findFirst({ where: eq(workItems.id, id) });
+        if (current?.assigneeId) {
+          throw new APIError(409, 'ALREADY_CLAIMED', { message: 'Work item is already claimed.' });
+        }
+        throw new APIError(409, 'VERSION_CONFLICT', { message: 'Work item was changed concurrently.' });
+      }
+      
+      const updatedItem = updatedItems[0];
+
+      await tx.insert(itemEvents).values({
+        itemId: id,
+        actorId: user.id,
+        type: 'claimed',
+        payload: { assigneeId: user.id },
+      });
+
+      await tx.insert(outbox).values({
+        type: 'item_claimed',
+        payload: { itemId: id, actorId: user.id },
+      });
+
+      if (idempotencyKey) {
+        await tx.update(idempotencyKeys)
+          .set({ response: updatedItem })
+          .where(eq(idempotencyKeys.key, idempotencyKey));
+      }
 
       return updatedItem;
     });

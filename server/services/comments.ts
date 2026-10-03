@@ -1,5 +1,5 @@
 import { db } from '../../lib/db';
-import { comments, itemEvents, workItems } from '../../lib/db/schema';
+import { comments, itemEvents, workItems, outbox } from '../../lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { createCommentSchema } from '../../lib/validation';
@@ -27,6 +27,11 @@ export class CommentService {
         actorId: user.id,
         type: 'comment_added',
         payload: { commentId: newComment.id },
+      });
+
+      await tx.insert(outbox).values({
+        type: 'item_commented',
+        payload: { itemId, commentId: newComment.id, actorId: user.id },
       });
 
       return newComment;

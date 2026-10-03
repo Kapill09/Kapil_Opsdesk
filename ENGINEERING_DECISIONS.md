@@ -46,3 +46,22 @@ This document captures the architectural decisions made for OpsDesk to ensure co
   - **Centralized Permissions:** Having a single `can(user, action, resource)` prevents fragmented and inconsistent permission checks scattered across routes.
   - **UI Permissive Masking:** UI hides actions (like editing unowned items) for UX, but is never relied upon as a security measure.
   - **Replaceable Identity:** `getCurrentUser()` simply mocks the first deterministic database user. It's built cleanly so a real OIDC/SSO provider can drop in without refactoring business logic.
+
+## 7. Optimistic Concurrency
+- **Decision:** Version-based optimistic concurrency was implemented.
+- **Reasoning:** Rather than querying data and evaluating version mismatch in application code (which creates a race condition), we use atomic conditional SQL updates (`WHERE id = ? AND version = ?`). If 0 rows are affected, we know the resource changed concurrently.
+
+## 8. Atomic Concurrent Claim
+- **Decision:** Use conditional database update (`WHERE assignee_id IS NULL`).
+- **Reasoning:** Implementing a read-then-write mechanism is fundamentally vulnerable to race conditions between two concurrent requests. Updating conditionally enforces the database to serialize the claims correctly, ensuring exactly one winner.
+
+## 9. Idempotency & Outbox Worker Pattern
+- **Decision:** Added `idempotency_keys` check for mutations and `outbox` table for reliable asynchronous side effects (like notifications).
+- **Reasoning:**
+  - **Idempotency:** Re-executing mutations across network retries safely produces the exact same observable outcome without repeating side effects.
+  - **PostgreSQL Outbox vs Redis/Kafka:** We avoided Redis and Kafka because introducing new infrastructure layers for queues breaks the transactional boundary. A PostgreSQL `outbox` guarantees that the mutation and the side-effect intent are written atomically in the same transaction.
+  - **Worker Retry Strategy:** The standalone script (`scripts/worker.ts`) implements retry polling utilizing `FOR UPDATE SKIP LOCKED`. If processing fails, it increments `attempts`. Once attempts exhaust, it safely stops retrying the task.
+
+## 10. Deterministic Compound Cursor
+- **Decision:** Implemented compound pagination cursor (`createdAt + id`).
+- **Reasoning:** Simple single-column `createdAt` cursors result in skipped records or infinite loops when multiple records share exactly the same timestamp. By chaining `id`, ties are predictably broken without data loss.

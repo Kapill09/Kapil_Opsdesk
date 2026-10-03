@@ -30,7 +30,7 @@ describe('Work Items & Comments Integration', () => {
       priority: 'high' as const,
     };
 
-    const newItem = await WorkItemService.create(itemData, mockUser);
+    const newItem: any = await WorkItemService.create(itemData, mockUser);
 
     expect(newItem).toBeDefined();
     expect(newItem.id).toBeTypeOf('string');
@@ -61,7 +61,7 @@ describe('Work Items & Comments Integration', () => {
       memberships: [{ teamId, role: 'member', teamName: 'Test Team 2' }]
     };
 
-    const newItem = await WorkItemService.create({
+    const newItem: any = await WorkItemService.create({
       teamId,
       title: 'Test Issue For Comment',
       description: 'Need comments',

@@ -36,10 +36,12 @@ export async function PATCH(
     const body = await request.json();
     const data = updateWorkItemSchema.parse(body);
 
+    const idempotencyKey = request.headers.get('Idempotency-Key') || undefined;
+
     const user = await getCurrentUser();
     if (!user) throw new AuthError(401, 'Unauthorized');
 
-    const item = await WorkItemService.update(id, data, user);
+    const item = await WorkItemService.update(id, data, user, idempotencyKey);
     return Response.json(item);
   } catch (error) {
     return handleAPIError(error);

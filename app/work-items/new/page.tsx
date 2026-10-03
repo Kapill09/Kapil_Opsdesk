@@ -34,9 +34,13 @@ export default function NewWorkItemPage() {
 
   const createMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
+      const idempotencyKey = crypto.randomUUID();
       const res = await fetch('/api/work-items', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Idempotency-Key': idempotencyKey
+        },
         body: JSON.stringify(data),
       });
       if (!res.ok) {
