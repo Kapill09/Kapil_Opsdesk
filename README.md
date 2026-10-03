@@ -21,40 +21,38 @@ The system is built as a modular monolith. It uses a server-driven architecture 
 
 ## Local Setup
 
-### Prerequisites
-- Node.js (v20+)
-- Docker & Docker Compose
-
 ### Environment Variables
-Copy the example environment file:
-```bash
-cp .env.example .env
-```
-(No real secrets are needed for initial local setup).
-
-### Starting the Database
-Start the PostgreSQL instance:
-```bash
-docker compose up -d
+1. Ensure you have your Neon PostgreSQL connection string.
+2. Add it to a `.env.local` (and optionally `.env`) file in the root:
+```env
+DATABASE_URL="postgresql://user:password@host/dbname"
 ```
 
-### Development Commands
-Install dependencies:
+### Installation
+Install all dependencies:
 ```bash
 npm install
 ```
 
-Run database migrations/push schema:
+### Database Migration & Seeding
+Push the Drizzle schema directly to Neon:
 ```bash
 npx drizzle-kit push
 ```
 
-Start the development server:
+Seed the database with deterministic test data:
+```bash
+npm run db:seed
+```
+
+### Development
+Start the local server:
 ```bash
 npm run dev
 ```
 
-Run tests:
+### Testing
+Run unit and integration tests via Vitest:
 ```bash
 npm run test
 ```

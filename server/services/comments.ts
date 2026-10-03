@@ -1,0 +1,31 @@
+import { db } from '../../lib/db';
+import { comments, itemEvents, workItems } from '../../lib/db/schema';
+import { eq } from 'drizzle-orm';
+import { z } from 'zod';
+import { createCommentSchema } from '../../lib/validation';
+import { APIError } from '../../lib/errors';
+
+export class CommentService {
+  static async create(itemId: string, authorId: string, data: z.infer<typeof createCommentSchema>) {
+    return await db.transaction(async (tx) => {
+      // Validate work item exists
+      const item = await tx.query.workItems.findFirst({ where: eq(workItems.id, itemId) });
+      if (!item) throw new APIError(404, 'Work item not found');
+
+      const [newComment] = await tx.insert(comments).values({
+        itemId,
+        authorId,
+        content: data.content,
+      }).returning();
+
+      await tx.insert(itemEvents).values({
+        itemId,
+        actorId: authorId,
+        type: 'comment_added',
+        payload: { commentId: newComment.id },
+      });
+
+      return newComment;
+    });
+  }
+}

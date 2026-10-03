@@ -8,9 +8,35 @@ import {
   jsonb,
   boolean,
   unique,
-  primaryKey
+  primaryKey,
+  pgEnum,
+  index
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
+
+export const workItemTypeEnum = pgEnum('work_item_type', [
+  'customer_issue',
+  'engineering_problem',
+  'payment_investigation',
+  'production_incident',
+  'compliance_request',
+  'operational_task',
+]);
+
+export const workItemStatusEnum = pgEnum('work_item_status', [
+  'open',
+  'in_progress',
+  'blocked',
+  'resolved',
+  'closed',
+]);
+
+export const workItemPriorityEnum = pgEnum('work_item_priority', [
+  'low',
+  'medium',
+  'high',
+  'critical',
+]);
 
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -41,14 +67,24 @@ export const workItems = pgTable('work_items', {
   teamId: uuid('team_id').references(() => teams.id).notNull(),
   title: varchar('title', { length: 255 }).notNull(),
   description: text('description').notNull(),
-  status: varchar('status', { length: 50 }).notNull(), // open, in_progress, pending_approval, resolved, closed
-  priority: varchar('priority', { length: 50 }).notNull(), // low, medium, high, urgent
+  type: workItemTypeEnum('type').notNull(),
+  status: workItemStatusEnum('status').default('open').notNull(),
+  priority: workItemPriorityEnum('priority').default('medium').notNull(),
   assigneeId: uuid('assignee_id').references(() => users.id),
   dueAt: timestamp('due_at'),
   version: integer('version').default(1).notNull(), // Optimistic concurrency version
   createdBy: uuid('created_by').references(() => users.id).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => {
+  return {
+    teamIdIdx: index('work_items_team_id_idx').on(table.teamId),
+    statusIdx: index('work_items_status_idx').on(table.status),
+    priorityIdx: index('work_items_priority_idx').on(table.priority),
+    assigneeIdIdx: index('work_items_assignee_id_idx').on(table.assigneeId),
+    createdAtIdx: index('work_items_created_at_idx').on(table.createdAt),
+    updatedAtIdx: index('work_items_updated_at_idx').on(table.updatedAt),
+  };
 });
 
 export const itemEvents = pgTable('item_events', {
